@@ -1,0 +1,74 @@
+function sendBirthdayAndAnniversaryReminders() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
+  var data = sheet.getDataRange().getValues();
+  var today = new Date();
+  var todayDay = today.getDate();
+  var todayMonth = today.getMonth(); // 0 = Jan
+  var currentYear = today.getFullYear();
+
+  var myEmail = "hr@myrealestate.in";
+
+  var birthdayList = [];
+  var anniversaryList = [];
+
+  for (var i = 1; i < data.length; i++) {
+    var name = data[i][0];   // Column A = Name
+    var dobStr = data[i][4]; // Column E = DOB
+    var dojStr = data[i][5]; // Column F = DOJ
+    var status = data[i][9]; // Column J = Status
+
+    if (!status || status.toString().toLowerCase() !== "active") continue;
+
+    // 🎂 Birthday Check
+    if (dobStr) {
+      var dob = new Date(dobStr);
+      if (dob.getDate() === todayDay && dob.getMonth() === todayMonth) {
+        birthdayList.push(name);
+      }
+    }
+
+    // 🏆 Anniversary Check
+    if (dojStr) {
+      var doj = new Date(dojStr);
+      if (doj.getDate() === todayDay && doj.getMonth() === todayMonth) {
+        var yearsCompleted = currentYear - doj.getFullYear();
+        if (yearsCompleted >= 1) {
+          anniversaryList.push(name + " – Completed " + yearsCompleted + " year(s)");
+        }
+      }
+    }
+  }
+
+  // 📧 Send Email if needed
+  if (birthdayList.length > 0 || anniversaryList.length > 0) {
+    var subjectParts = [];
+    if (birthdayList.length > 0) subjectParts.push("🎂 Birthday");
+    if (anniversaryList.length > 0) subjectParts.push("🏆 Work Anniversary");
+
+    var body = "Hello Team,\n\nHere’s a special reminder for today:\n\n";
+
+    if (birthdayList.length > 0) {
+      body += "🎂 Birthday:\n";
+      birthdayList.forEach(function(name) {
+        body += "• " + name + "\n";
+      });
+      body += "\n";
+    }
+
+    if (anniversaryList.length > 0) {
+      body += "🏆 Work Anniversary:\n";
+      anniversaryList.forEach(function(entry) {
+        body += "• " + entry + "\n";
+      });
+      body += "\n";
+    }
+
+    body += "Please join us in wishing them!\n\nBest regards,\nHR System";
+
+    MailApp.sendEmail({
+      to: myEmail,
+      subject: subjectParts.join(" & ") + " Reminder",
+      body: body
+    });
+  }
+}
